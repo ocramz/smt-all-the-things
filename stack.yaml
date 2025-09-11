@@ -1,0 +1,11 @@
+resolver: ghc-9.12.2
+system-ghc: true
+
+packages:
+- .
+
+extra-deps: []
+
+flags: {}
+
+extra-package-dbs: []
