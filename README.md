@@ -1,15 +1,16 @@
 # smt-all-the-things
 
-A Haskell Stack project using the SBV (SMT-Based Verification) library for SMT solver examples and utilities.
+Solving puzzles with SMT solvers.
+
+Contains some alternative implementations that use `logict`
+
+## Dependencies
+
+* stack
+* z3
 
 ## Building and Running
 
-### Using Cabal
-```bash
-cabal build
-cabal run smt-all-the-things-exe
-cabal test
-```
 
 ### Using Stack
 ```bash
