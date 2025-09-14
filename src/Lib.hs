@@ -7,20 +7,30 @@ import Control.Applicative (Alternative(..))
 import Control.Monad (guard, foldM)
 import Control.Monad.IO.Class (liftIO)
 
+import Data.Foldable (for_)
 import Data.Int (Int8, Int16, Int64)
 import Data.Function (on, (&))
 import Data.List (groupBy)
 import Data.Maybe (fromMaybe)
-import Data.Foldable (for_)
+import Data.Traversable (for)
 
-import Data.SBV (QuantifiedBool(..), SBool, Forall(..), ForallN(..), Exists(..), ExistsN(..), quantifiedBool, SMTConfig(..), Logic(..), setLogic, Timing(..), z3, prove, sat, satWith, allSat, allSatWith, AllSatResult(..), ite, SBV, sFromIntegral, sAll, (.&&), (.==), (./=), (.>), (.<), (.<=), (.>=), constrain, optimize, optimizeWith, OptimizeStyle(..), minimize, maximize, sInt, SInt, sInteger, SInteger, sTuples, SInt16, sInt16, sInt64, literal, unliteral, OrdSymbolic(..), Symbolic, SList, SymVal(..))
-import qualified Data.SBV.List as SL ((!!), implode, length, foldr)
+import Data.SBV (QuantifiedBool(..), SBool, sTrue, Forall(..), ForallN(..), Exists(..), ExistsN(..), quantifiedBool, SMTConfig(..), Logic(..), setLogic, Timing(..), z3, prove, sat, satWith, allSat, allSatWith, AllSatResult(..), ite, SBV, sFromIntegral, sAll, (.=>), (.&&), (.==), (./=), (.>), (.<), (.<=), (.>=), constrain, optimize, optimizeWith, OptimizeStyle(..), minimize, maximize, sInt, SInt, sInteger, SInteger, sTuples, SInt16, sInt16, sInt64, sList, literal, unliteral, OrdSymbolic(..), Symbolic, SList, SymVal(..))
+import qualified Data.SBV.List as SL ((!!), head, tail, null, all, implode, length, foldr)
 import qualified Data.SBV.Tuple as ST (untuple)
 
 -- import Prelude hiding ((!!), minimum)
 
 
 import Control.Monad.Logic (observeAll, observe)
+
+-- -- sITraverse_ :: (Monad f, SymVal a) => (SBV a -> f b) -> SList a -> f ()
+-- sITraverse_ act ls = loop 0 ls
+--   where
+--     loop i xs
+--       | SL.null xs == sTrue = pure ()
+--       | otherwise = act i (SL.head xs) >> loop (i + 1) (SL.tail xs)
+
+
 
 
 {-| https://leetcode.com/problems/maximal-rectangle/description/
@@ -117,6 +127,8 @@ rectangle mtx = do
 
 -- -- --
 
+-- allSatisfy p iis xs = SL.all (\i -> p $ xs SL.!! i) iis
+
 -- 1d version of the rectangle-in-matrix problem above
 
 -- longestSegment :: []
@@ -131,15 +143,40 @@ longestSegment vs = do
     isValueOK i = svs SL.!! i .== literal 1
   a <- sInteger "a"
   b <- sInteger "b"
+  -- ixs <- sList "ixs"
   constrain $
+    (b .>= a) .&&
     inBounds a .&&
     inBounds b .&&
+    -- use entailment as suggested in https://github.com/LeventErkok/sbv/issues/752#issuecomment-3288475792
     quantifiedBool (\(Forall i) ->
-                       (i .>= a .&& i .<= b) .&&
+                       (i .>= a .&& i .<= b) .=> 
                        isValueOK i
                        )
-  -- maximize "length" (b - a)
+  maximize "length" (b - a) -- find the largest compatible segment
 
+-- [GOOD] (maximize s16)
+-- [SEND] (check-sat)
+-- [RECV] WARNING: optimization with quantified constraints is not supported
+-- [WARN] Previous response is explicitly ignored, beware!
+-- [RECV] sat
+-- [SEND] (get-objectives)
+-- [RECV] (objectives
+--         (s16 3)
+--        )
+-- [SEND] (get-value (s0))
+-- [RECV] ((s0 1))
+-- [SEND] (get-value (s1))
+-- [RECV] ((s1 1))
+-- [SEND] (get-value (s16))
+-- [RECV] ((s16 0))
+-- *** Solver   : Z3
+-- *** Exit code: ExitSuccess
+-- *** SBV: Elapsed time: 0.302s
+-- Optimal model:
+--   a      = 1 :: Integer
+--   b      = 1 :: Integer
+--   length = 0 :: Integer
 
 
 
